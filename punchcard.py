@@ -33,6 +33,9 @@ def get_log_data():
     except OSError, e:
         print 'Git not installed?'
         sys.exit(-1)
+    if outdata == '':
+        print 'Not a git repository?'
+        sys.exit(-1)
     return outdata
 
 # get day and hour
