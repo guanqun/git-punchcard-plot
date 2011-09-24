@@ -18,6 +18,7 @@ PREREQUISITE
 
 - python (of course!)
 - pycairo module
+- git
 
 Then you're free to go!
 
