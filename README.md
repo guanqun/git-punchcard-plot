@@ -1,0 +1,29 @@
+INTRODUCTION
+------------
+
+This is a small script to visualize the time when commits are committed in a
+git repository. The idea is stolen from Github's punchcard picture(Kudos to
+Github)!
+
+WHY IS IT INTERESTING
+---------------------
+
+It shows how this repository is developed in developer's time.  As I see it, I
+can get a simple clue whether a project is a spare time project or this project
+is totally under a company's control, thus resulting in commits from 8AM to
+6PM, Monday to Friday.
+
+PREREQUISITE
+------------
+
+- python (of course!)
+- pycairo module
+
+Then you're free to go!
+
+LICENSE
+-------
+
+This project is under public domain, you can do whatever you want ;)
+However, if you're improving this tool a bit, you can freely fork it and then
+send me back a pull request. I would be very glad to integrate it.
