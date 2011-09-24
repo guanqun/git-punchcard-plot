@@ -9,7 +9,7 @@ SCREENSHOT
 ----------
 
 Here's the generated picture from MongoDB project:
-[activities]: http://printf.me/wp-content/uploads/2011/09/output-300x109.png "MongoDB Punchcard"
+![MongoDB Punchcard](http://printf.me/wp-content/uploads/2011/09/output-300x109.png)
 
 WHY IS IT INTERESTING
 ---------------------
