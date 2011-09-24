@@ -22,6 +22,13 @@ PREREQUISITE
 
 Then you're free to go!
 
+USAGE
+-----
+
+Put this script into a git repository, then invoke `python punchcard.py` and a
+png picture will be generated.  If you want a different name, then simply
+invoke `python punchcard.py <another-name.png>`.
+
 LICENSE
 -------
 
