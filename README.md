@@ -5,6 +5,12 @@ This is a small script to visualize the time when commits are committed in a
 git repository. The idea is stolen from Github's punchcard picture(Kudos to
 Github)!
 
+SCREENSHOT
+----------
+
+Here's the generated picture from [MongoDB](https://github.com/guanqun/mongo):
+[activities]: http://printf.me/wp-content/uploads/2011/09/output-300x109.png
+
 WHY IS IT INTERESTING
 ---------------------
 
