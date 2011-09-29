@@ -10,7 +10,7 @@ width, height = 1100, 400
 # 40 pixels for each block
 distance = 40
 
-max_range = (distance/2) * (distance/2)
+max_range = (distance/2) ** 2
 
 top = 20
 left = 60
