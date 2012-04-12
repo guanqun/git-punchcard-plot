@@ -17,6 +17,9 @@ if len(sys.argv) >= 2:
 # Keep the previous aspect ratio!
 if len(sys.argv) >= 3:
     width = int(round(float(sys.argv[2]), 0))  # This should be at least 650
+    if width > 32767:
+        print "Sorry, resolution too high"
+        exit(1)
 else:
     width = 1100
 
