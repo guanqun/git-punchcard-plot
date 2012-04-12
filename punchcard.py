@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Note:
 # Originally written by guanqun (https://github.com/guanqun/) Sep 29, 2011
-# Edited by Intrepid (https://github.com/guanqun/) Apr 12, 2012
+# Edited by Intrepid (https://github.com/intrepid/) Apr 12, 2012
 
 import math
 import cairo
