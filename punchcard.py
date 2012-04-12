@@ -17,7 +17,7 @@ left = 60
 indicator_length = 5
 
 days = ['Sat', 'Fri', 'Thu', 'Wed', 'Tue', 'Mon', 'Sun']
-hours = ['12am'] + [str(x) for x in range(1, 12)] + ['12pm'] + [str(x) for x in range(1, 12)]
+hours = ['12am'] + [str(x) for x in xrange(1, 12)] + ['12pm'] + [str(x) for x in xrange(1, 12)]
 def get_x_y_from_date(day, hour):
     y = top + (days.index(day) + 1) * distance
     x = left + (hour + 1) * distance
@@ -45,7 +45,7 @@ data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] for
 stats = {}
 for d in days:
     stats[d] = {}
-    for h in range(0, 24):
+    for h in xrange(0, 24):
         stats[d][h] = 0
 
 total = 0
@@ -56,7 +56,7 @@ for line in data_log:
 def get_length(nr):
     if nr == 0:
         return 0
-    for i in range(1, distance/2):
+    for i in xrange(1, distance/2):
         if i*i <= nr and nr < (i+1)*(i+1):
             return i
     if nr == max_range:
@@ -94,14 +94,14 @@ cr.stroke()
 
 # draw indicators on x-axis and y-axis
 x, y = left, top
-for i in range(8):
+for i in xrange(8):
     cr.move_to(x, y)
     cr.rel_line_to(-indicator_length, 0)
     cr.stroke()
     y += distance
 
 x += distance
-for i in range(25):
+for i in xrange(25):
     cr.move_to(x, y)
     cr.rel_line_to(0, indicator_length)
     cr.stroke()
@@ -112,7 +112,7 @@ cr.select_font_face ('sans-serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NO
 
 # draw Mon, Sat, ... Sun on y-axis
 x, y = (left - 5), (top + distance)
-for i in range(7):
+for i in xrange(7):
     x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(days[i])
     cr.move_to(x - indicator_length - width, y + height/2)
     cr.show_text(days[i])
@@ -120,7 +120,7 @@ for i in range(7):
 
 # draw 12am, 1, ... 11 on x-axis
 x, y = (left + distance), (top + (7 + 1) * distance + 5)
-for i in range(24):
+for i in xrange(24):
     x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(hours[i])
     cr.move_to(x - width/2 - x_bearing, y + indicator_length + height)
     cr.show_text(hours[i])
