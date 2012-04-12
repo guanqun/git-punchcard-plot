@@ -5,16 +5,27 @@ import cairo
 import sys
 import subprocess
 
-width, height = 1100, 400
+# Keep the previous aspect ratio!
+if len(sys.argv) >= 3:
+    width = int(round(float(sys.argv[2]), 0))  # This should be at least 650
+else:
+    width = 1100
 
-# 40 pixels for each block
-distance = 40
+height = int(round(width/2.75, 0))
+
+# Calculate the relative distance
+distance = int(math.sqrt((width*height)/270.5))
+
+# Round the distance to a number divisible by 2
+if distance % 2 == 1:
+    distance -= 1
 
 max_range = (distance/2) ** 2
 
-top = 20
-left = 60
-indicator_length = 5
+# Good values for the relative position
+left = width/18 + 10  # The '+ 10' is to prevent text from overlapping 
+top = height/20 + 10
+indicator_length = height/20
 
 days = ['Sat', 'Fri', 'Thu', 'Wed', 'Tue', 'Mon', 'Sun']
 hours = ['12am'] + [str(x) for x in xrange(1, 12)] + ['12pm'] + [str(x) for x in xrange(1, 12)]
@@ -109,6 +120,9 @@ for i in xrange(25):
 
 # select font
 cr.select_font_face ('sans-serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+
+# and set a appropriate font size
+cr.set_font_size(math.sqrt((width*height)/3055.6))
 
 # draw Mon, Sat, ... Sun on y-axis
 x, y = (left - 5), (top + distance)
