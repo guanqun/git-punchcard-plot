@@ -23,6 +23,9 @@ if len(sys.argv) >= 3:
     if width > 32767:
         print "Sorry, resolution too high"
         exit(1)
+    elif width < 650:
+        print "Sorry, resolution too low"
+        exit(1)
 else:
     width = 1100
 
