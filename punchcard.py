@@ -5,6 +5,15 @@ import cairo
 import sys
 import subprocess
 
+# Print usage
+if len(sys.argv) >= 2:
+    if sys.argv[1] == "--help" or sys.argv[1] == "-h":
+        print "SYNTAX:    ./punchchard.py [opt. FILENAME [opt. X-RESOLUTION] ]"
+        print "EXAMPLE:   ./punchchard.py outputfile.png 4000"
+        print "This creates 'outputfile.png', a 4000px wide png image"
+        print ""
+        sys.exit(0)
+
 # Keep the previous aspect ratio!
 if len(sys.argv) >= 3:
     width = int(round(float(sys.argv[2]), 0))  # This should be at least 650
