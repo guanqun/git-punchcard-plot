@@ -1,23 +1,52 @@
 #!/usr/bin/env python
+# Note:
+# Originally written by guanqun (https://github.com/guanqun/) Sep 29, 2011
+# Edited by Intrepid (https://github.com/intrepid/) Apr 12, 2012
 
 import math
 import cairo
 import sys
 import subprocess
 
-width, height = 1100, 400
+# Print usage
+if len(sys.argv) >= 2:
+    if sys.argv[1] == "--help" or sys.argv[1] == "-h":
+        print "SYNTAX:    ./punchchard.py [opt. FILENAME [opt. X-RESOLUTION] ]"
+        print "EXAMPLE:   ./punchchard.py outputfile.png 4000"
+        print "This creates 'outputfile.png', a 4000px wide png image"
+        print ""
+        sys.exit(0)
 
-# 40 pixels for each block
-distance = 40
+# Keep the previous aspect ratio!
+if len(sys.argv) >= 3:
+    width = int(round(float(sys.argv[2]), 0))  # This should be at least 650
+    if width > 32767:
+        print "Sorry, resolution too high"
+        exit(1)
+    elif width < 650:
+        print "Sorry, resolution too low"
+        exit(1)
+else:
+    width = 1100
+
+height = int(round(width/2.75, 0))
+
+# Calculate the relative distance
+distance = int(math.sqrt((width*height)/270.5))
+
+# Round the distance to a number divisible by 2
+if distance % 2 == 1:
+    distance -= 1
 
 max_range = (distance/2) ** 2
 
-top = 20
-left = 60
-indicator_length = 5
+# Good values for the relative position
+left = width/18 + 10  # The '+ 10' is to prevent text from overlapping 
+top = height/20 + 10
+indicator_length = height/20
 
 days = ['Sat', 'Fri', 'Thu', 'Wed', 'Tue', 'Mon', 'Sun']
-hours = ['12am'] + [str(x) for x in range(1, 12)] + ['12pm'] + [str(x) for x in range(1, 12)]
+hours = ['12am'] + [str(x) for x in xrange(1, 12)] + ['12pm'] + [str(x) for x in xrange(1, 12)]
 def get_x_y_from_date(day, hour):
     y = top + (days.index(day) + 1) * distance
     x = left + (hour + 1) * distance
@@ -45,7 +74,7 @@ data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] for
 stats = {}
 for d in days:
     stats[d] = {}
-    for h in range(0, 24):
+    for h in xrange(0, 24):
         stats[d][h] = 0
 
 total = 0
@@ -56,7 +85,7 @@ for line in data_log:
 def get_length(nr):
     if nr == 0:
         return 0
-    for i in range(1, distance/2):
+    for i in xrange(1, distance/2):
         if i*i <= nr and nr < (i+1)*(i+1):
             return i
     if nr == max_range:
@@ -94,14 +123,14 @@ cr.stroke()
 
 # draw indicators on x-axis and y-axis
 x, y = left, top
-for i in range(8):
+for i in xrange(8):
     cr.move_to(x, y)
     cr.rel_line_to(-indicator_length, 0)
     cr.stroke()
     y += distance
 
 x += distance
-for i in range(25):
+for i in xrange(25):
     cr.move_to(x, y)
     cr.rel_line_to(0, indicator_length)
     cr.stroke()
@@ -110,9 +139,12 @@ for i in range(25):
 # select font
 cr.select_font_face ('sans-serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
 
+# and set a appropriate font size
+cr.set_font_size(math.sqrt((width*height)/3055.6))
+
 # draw Mon, Sat, ... Sun on y-axis
 x, y = (left - 5), (top + distance)
-for i in range(7):
+for i in xrange(7):
     x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(days[i])
     cr.move_to(x - indicator_length - width, y + height/2)
     cr.show_text(days[i])
@@ -120,7 +152,7 @@ for i in range(7):
 
 # draw 12am, 1, ... 11 on x-axis
 x, y = (left + distance), (top + (7 + 1) * distance + 5)
-for i in range(24):
+for i in xrange(24):
     x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(hours[i])
     cr.move_to(x - width/2 - x_bearing, y + indicator_length + height)
     cr.show_text(hours[i])
