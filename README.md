@@ -32,8 +32,11 @@ USAGE
 -----
 
 Put this script into a git repository, then invoke `python punchcard.py` and a
-png picture will be generated.  If you want a different name, then simply
-invoke `python punchcard.py <another-name.png>`.
+png picture 'output.png' will be generated.  If you want a different name, then simply
+invoke `python punchcard.py <another-name.png>`. The default width of a picture is 1100px.
+If you'd like to have a higher resolution, you can run `python punchcard.py <another-name.png> <new-width>`.
+Please note that you *need* to specify a filename, if you need another resolution. The image gets scaled
+automatically.
 
 LICENSE
 -------
