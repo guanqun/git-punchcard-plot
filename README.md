@@ -31,12 +31,15 @@ Then you're free to go!
 USAGE
 -----
 
-Put this script into a git repository, then invoke `python punchcard.py` and a
-png picture 'output.png' will be generated.  If you want a different name, then simply
-invoke `python punchcard.py <another-name.png>`. The default width of a picture is 1100px.
-If you'd like to have a higher resolution, you can run `python punchcard.py <another-name.png> <new-width>`.
-Please note that you *need* to specify a filename, if you need another resolution. The image gets scaled
-automatically.
+- `cp git-punchcard /usr/local/bin`
+- make sure that `/usr/local/bin` is in your `$PATH` environment variable.
+- invoke `git punchcard`
+
+If you want a different name, then simply invoke `git punchcard <another-name.png>`.
+The default width of a picture is 1100px.  If you'd like
+to have a higher resolution, you can run `git punchcard <another-name.png> <new-width>`.
+Please note that you *need* to specify a filename, if you need another
+resolution. The image gets scaled automatically.
 
 LICENSE
 -------
