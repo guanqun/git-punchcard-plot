@@ -23,7 +23,7 @@ if len(sys.argv) > 1:
 
 options =dict()
 
-if len(sys.argv) > 2:
+if len(sys.argv) > 1:
     options = dict(arg.split('=') for arg in sys.argv[1:])
 if options.has_key('width'):
     width = int(options['width'])
@@ -60,7 +60,7 @@ def get_log_data():
         gitcommand = ['git', 'log', '--no-merges', '--author='+author,  '--pretty=format: %aD']
         # if author != None:
         #     gitcommand.append('--author='+author)
-
+        print(gitcommand)
         p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
