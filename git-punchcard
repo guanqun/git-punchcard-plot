@@ -8,26 +8,29 @@ import cairo
 import sys
 import subprocess
 
-# Print usage
-if len(sys.argv) >= 2:
+# defaults
+author = ''
+width = 1100
+output_file = 'output.png'
+
+if len(sys.argv) > 1:
     if sys.argv[1] == "--help" or sys.argv[1] == "-h":
-        print("SYNTAX:    git punchchard [opt. FILENAME [opt. X-RESOLUTION] ]")
-        print("EXAMPLE:   git punchchard outputfile.png 4000")
+        print("SYNTAX:    git punchchard")
+        print("EXAMPLE:   git punchchard file=outputfile.png width=4000")
         print("This creates 'outputfile.png', a 4000px wide png image")
         print()
         sys.exit(0)
 
-# Keep the previous aspect ratio!
-if len(sys.argv) >= 3:
-    width = int(round(float(sys.argv[2]), 0))  # This should be at least 650
-    if width > 32767:
-        print("Sorry, resolution too high")
-        exit(1)
-    elif width < 650:
-        print("Sorry, resolution too low")
-        exit(1)
-else:
-    width = 1100
+options =dict()
+
+if len(sys.argv) > 1:
+    options = dict(arg.split('=') for arg in sys.argv[1:])
+if options.has_key('width'):
+    width = int(options['width'])
+if options.has_key('author'):
+    author = options['author']
+if options.has_key('file'):
+    output_file = options["file"]
 
 height = int(round(width/2.75, 0))
 
@@ -54,7 +57,11 @@ def get_x_y_from_date(day, hour):
 
 def get_log_data():
     try:
-        p = subprocess.Popen(['git', 'log', '--no-merges', '--pretty=format: %aD'],
+        gitcommand = ['git', 'log', '--no-merges', '--author='+author,  '--pretty=format: %aD']
+        # if author != None:
+        #     gitcommand.append('--author='+author)
+        print(gitcommand)
+        p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -172,10 +179,7 @@ def draw_circle(pos, length):
 for each in final_data:
     draw_circle(each[1], each[0])
 
-# select output file
-output_file = 'output.png'
-if len(sys.argv) >= 2:
-    output_file = sys.argv[1]
+
 
 # write to output
 surface.write_to_png (output_file)
