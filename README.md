@@ -35,11 +35,14 @@ USAGE
 - make sure that `/usr/local/bin` is in your `$PATH` environment variable.
 - invoke `git punchcard`
 
-If you want a different name, then simply invoke `git punchcard <another-name.png>`.
+If you want a different name, then simply invoke `git punchcard file=<another-name.png>`.
 The default width of a picture is 1100px.  If you'd like
-to have a higher resolution, you can run `git punchcard <another-name.png> <new-width>`.
-Please note that you *need* to specify a filename, if you need another
-resolution. The image gets scaled automatically.
+to have a higher resolution, you can run `git punchcard file=<another-name.png> width=<new-width>`.
+
+If you would like to filter by a particular author then do so as follows. (all parameters are available)
+`git punchcard author=<authorname>`
+
+The image gets scaled automatically.
 
 LICENSE
 -------
