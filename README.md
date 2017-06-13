@@ -34,6 +34,7 @@ USAGE
 - `cp git-punchcard /usr/local/bin`
 - make sure that `/usr/local/bin` is in your `$PATH` environment variable.
 - invoke `git punchcard`
+- in the same folder, you should see a file named `output.png`, that's the generated image.
 
 If you want a different name, then simply invoke `git punchcard file=<another-name.png>`.
 The default width of a picture is 1100px.  If you'd like

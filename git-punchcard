@@ -60,7 +60,7 @@ def get_log_data():
         gitcommand = ['git', 'log', '--no-merges', '--author='+author,  '--pretty=format: %aD']
         # if author != None:
         #     gitcommand.append('--author='+author)
-        print(gitcommand)
+        #print(gitcommand)
         p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
