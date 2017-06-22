@@ -41,11 +41,12 @@ path = os.getcwd()
 opaque = -1
 utc = 0
 timezone = None
+gitopts = ""
 
 options = dict()
 
 if len(sys.argv) > 1:
-    options = dict(arg.split('=') for arg in sys.argv[1:])
+    options = dict(arg.split('=', 1) for arg in sys.argv[1:])
 if options.has_key('width'):
     width = int(options['width'])
 if options.has_key('author'):
@@ -71,6 +72,9 @@ if options.has_key('timezone'):
         print("WARNING: COULD not parse timezone argument.")
         print("Please enter a decimal value. Eg: 3.0, -11.5")
         timezone = None
+
+if options.has_key('gitopts'):
+    gitopts = options['gitopts']
 
 height = int(round(width/2.75, 0))
 
@@ -98,10 +102,15 @@ def get_x_y_from_date(day, hour):
 def get_log_data():
     try:
         os.chdir(path)
-        gitcommand = ['git', 'log', '--no-merges', '--author='+author,  '--pretty=format: %aD']
-        # if author != None:
-        #     gitcommand.append('--author='+author)
-        #print(gitcommand)
+        print 'current path: ', os.getcwd()
+        gitcommand = ['git', 'log', '--no-merges', '--author='+author, \
+                '--pretty=format: %aD']
+
+        if gitopts != "":
+            gitcommand.append(gitopts)
+
+        print 'run cmd: ', ' '.join(gitcommand)
+
         p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
@@ -237,3 +246,5 @@ for each in final_data:
 # write to output
 os.chdir(original_path)
 surface.write_to_png (output_file)
+
+print "punchcard written to output file at: %s" % os.path.join(original_path, output_file)
