@@ -17,15 +17,22 @@ output_file = 'output.png'
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help" or sys.argv[1] == "-h":
         print("SYNTAX:    git punchchard")
+        print
         print("EXAMPLE:   git punchchard file=outputfile.png width=4000")
         print("This creates 'outputfile.png', a 4000px wide png image")
+        print
         print("EXAMPLE:   git punchcard path=/home/siddharth/code/punchcard")
         print("This creates a punch card of the git repository at the given path")
-        print()
+        print
+        print("EXAMPLE:   git punchcard opaque=0")
+        print("This sets the opacity of all the circles to constant value 0")
+        print("0 -> Black, 1 -> White (invisible)")
+        print
         sys.exit(0)
 
 original_path = os.getcwd()
 path = os.getcwd()
+opaque = -1
 
 options = dict()
 
@@ -39,6 +46,13 @@ if options.has_key('file'):
     output_file = options["file"]
 if options.has_key('path'):
     path = options["path"]
+if options.has_key('opaque'):
+    try:
+        opaque = float(options["opaque"])
+    except ValueError as error:
+        print("WARNING: Could not parse the opaque argument you gave. Please \
+        enter a value between 0 and 1")
+        opaque = -1
 
 height = int(round(width/2.75, 0))
 
@@ -180,6 +194,8 @@ def draw_circle(pos, length):
     # max of length is half of the distance
     x, y = pos
     clr = (1 - float(length * length) / max_range )
+    if opaque >= 0 and opaque < 1:
+        clr = opaque
     cr.set_source_rgba (clr, clr, clr)
     cr.move_to(x, y)
     cr.arc(x, y, length, 0, 2 * math.pi)
