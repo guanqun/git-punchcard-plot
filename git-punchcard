@@ -29,12 +29,18 @@ if len(sys.argv) > 1:
         print("This sets the opacity of all the circles to constant value 0")
         print("0 -> Black, 1 -> White (invisible)")
         print
+        print("EXAMPLE:   git punchcard timezone=+7.5")
+        print("This shows the graph with all times converted to timezone UTC+7.5")
+        print("If your contributors live in multiple timezones, this helps you")
+        print("in getting a relative estimate of when they work.")
+        print
         sys.exit(0)
 
 original_path = os.getcwd()
 path = os.getcwd()
 opaque = -1
 utc = 0
+timezone = None
 
 options = dict()
 
@@ -57,6 +63,14 @@ if options.has_key('opaque'):
         opaque = -1
 if options.has_key('utc'):
     utc = options['utc'] == '1'
+    timezone = 0
+if options.has_key('timezone'):
+    try:
+        timezone = float(options["timezone"])
+    except ValueError as error:
+        print("WARNING: COULD not parse timezone argument.")
+        print("Please enter a decimal value. Eg: 3.0, -11.5")
+        timezone = None
 
 height = int(round(width/2.75, 0))
 
@@ -104,14 +118,18 @@ def get_log_data():
 # get day and hour
 temp_log = get_log_data()
 
-# CONVERT EVERYTHING TO UTC
-if utc:
-    all_time_stamps = temp_log.split('\n')
-    times_in_utc = [formatdate(mktime_tz(parsedate_tz(x))) for x in temp_log.split('\n')]
+# CONVERT EVERYTHING TO UTC or ADD TIMEZONE OFFSET
 
-    temp_log = '\n'.join(times_in_utc)
+utc_offset = timezone != None and timezone * 3600 or 0
 
-data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] for x in temp_log.split('\n')]
+fixed_stamps = temp_log.split('\n')
+
+if timezone != None:
+    fixed_stamps = [formatdate(mktime_tz(parsedate_tz(x)) + utc_offset) \
+            for x in fixed_stamps]
+
+data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] \
+        for x in fixed_stamps]
 
 stats = {}
 for d in days:
