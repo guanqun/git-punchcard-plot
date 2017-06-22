@@ -8,6 +8,7 @@ import cairo
 import sys
 import subprocess
 import os
+from email.utils import mktime_tz, parsedate_tz, formatdate
 
 # defaults
 author = ''
@@ -33,6 +34,7 @@ if len(sys.argv) > 1:
 original_path = os.getcwd()
 path = os.getcwd()
 opaque = -1
+utc = 0
 
 options = dict()
 
@@ -53,6 +55,8 @@ if options.has_key('opaque'):
         print("WARNING: Could not parse the opaque argument you gave. Please \
         enter a value between 0 and 1")
         opaque = -1
+if options.has_key('utc'):
+    utc = options['utc'] == '1'
 
 height = int(round(width/2.75, 0))
 
@@ -99,6 +103,14 @@ def get_log_data():
 
 # get day and hour
 temp_log = get_log_data()
+
+# CONVERT EVERYTHING TO UTC
+if utc:
+    all_time_stamps = temp_log.split('\n')
+    times_in_utc = [formatdate(mktime_tz(parsedate_tz(x))) for x in temp_log.split('\n')]
+
+    temp_log = '\n'.join(times_in_utc)
+
 data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] for x in temp_log.split('\n')]
 
 stats = {}
