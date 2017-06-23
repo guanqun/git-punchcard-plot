@@ -7,6 +7,8 @@ import math
 import cairo
 import sys
 import subprocess
+import os
+from email.utils import mktime_tz, parsedate_tz, formatdate
 
 # defaults
 author = ''
@@ -16,21 +18,63 @@ output_file = 'output.png'
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help" or sys.argv[1] == "-h":
         print("SYNTAX:    git punchchard")
+        print
         print("EXAMPLE:   git punchchard file=outputfile.png width=4000")
         print("This creates 'outputfile.png', a 4000px wide png image")
-        print()
+        print
+        print("EXAMPLE:   git punchcard path=/home/siddharth/code/punchcard")
+        print("This creates a punch card of the git repository at the given path")
+        print
+        print("EXAMPLE:   git punchcard opaque=0")
+        print("This sets the opacity of all the circles to constant value 0")
+        print("0 -> Black, 1 -> White (invisible)")
+        print
+        print("EXAMPLE:   git punchcard timezone=+7.5")
+        print("This shows the graph with all times converted to timezone UTC+7.5")
+        print("If your contributors live in multiple timezones, this helps you")
+        print("in getting a relative estimate of when they work.")
+        print
         sys.exit(0)
 
-options =dict()
+original_path = os.getcwd()
+path = os.getcwd()
+opaque = -1
+utc = 0
+timezone = None
+gitopts = ""
+
+options = dict()
 
 if len(sys.argv) > 1:
-    options = dict(arg.split('=') for arg in sys.argv[1:])
+    options = dict(arg.split('=', 1) for arg in sys.argv[1:])
 if options.has_key('width'):
     width = int(options['width'])
 if options.has_key('author'):
     author = options['author']
 if options.has_key('file'):
     output_file = options["file"]
+if options.has_key('path'):
+    path = options["path"]
+if options.has_key('opaque'):
+    try:
+        opaque = float(options["opaque"])
+    except ValueError as error:
+        print("WARNING: Could not parse the opaque argument you gave. Please \
+        enter a value between 0 and 1")
+        opaque = -1
+if options.has_key('utc'):
+    utc = options['utc'] == '1'
+    timezone = 0
+if options.has_key('timezone'):
+    try:
+        timezone = float(options["timezone"])
+    except ValueError as error:
+        print("WARNING: COULD not parse timezone argument.")
+        print("Please enter a decimal value. Eg: 3.0, -11.5")
+        timezone = None
+
+if options.has_key('gitopts'):
+    gitopts = options['gitopts']
 
 height = int(round(width/2.75, 0))
 
@@ -57,10 +101,16 @@ def get_x_y_from_date(day, hour):
 
 def get_log_data():
     try:
-        gitcommand = ['git', 'log', '--no-merges', '--author='+author,  '--pretty=format: %aD']
-        # if author != None:
-        #     gitcommand.append('--author='+author)
-        #print(gitcommand)
+        os.chdir(path)
+        print 'current path: ', os.getcwd()
+        gitcommand = ['git', 'log', '--no-merges', '--author='+author, \
+                '--pretty=format: %aD']
+
+        if gitopts != "":
+            gitcommand.append(gitopts)
+
+        print 'run cmd: ', ' '.join(gitcommand)
+
         p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
@@ -76,7 +126,19 @@ def get_log_data():
 
 # get day and hour
 temp_log = get_log_data()
-data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] for x in temp_log.split('\n')]
+
+# CONVERT EVERYTHING TO UTC or ADD TIMEZONE OFFSET
+
+utc_offset = timezone != None and timezone * 3600 or 0
+
+fixed_stamps = temp_log.split('\n')
+
+if timezone != None:
+    fixed_stamps = [formatdate(mktime_tz(parsedate_tz(x)) + utc_offset) \
+            for x in fixed_stamps]
+
+data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] \
+        for x in fixed_stamps]
 
 stats = {}
 for d in days:
@@ -171,6 +233,8 @@ def draw_circle(pos, length):
     # max of length is half of the distance
     x, y = pos
     clr = (1 - float(length * length) / max_range )
+    if opaque >= 0 and opaque < 1:
+        clr = opaque
     cr.set_source_rgba (clr, clr, clr)
     cr.move_to(x, y)
     cr.arc(x, y, length, 0, 2 * math.pi)
@@ -179,7 +243,8 @@ def draw_circle(pos, length):
 for each in final_data:
     draw_circle(each[1], each[0])
 
-
-
 # write to output
+os.chdir(original_path)
 surface.write_to_png (output_file)
+
+print "punchcard written to output file at: %s" % os.path.join(original_path, output_file)
