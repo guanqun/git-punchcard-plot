@@ -8,7 +8,7 @@ Github)!
 
 Here's the generated picture from MongoDB project:
 
-![MongoDB Punchcard](https://github.com/guanqun/git-punchcard-plot/raw/master/mongodb-output.png)
+![MongoDB Punchcard](./img/mongodb-output.png)
 
 ## USAGE
 
