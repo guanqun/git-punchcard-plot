@@ -2,249 +2,324 @@
 # Note:
 # Originally written by guanqun (https://github.com/guanqun/) Sep 29, 2011
 # Edited by Intrepid (https://github.com/intrepid/) Apr 12, 2012
+# 2017-11-08 Paul Kienzle
+# * py2/py3 support, matplotlib support, code cleanup
+from __future__ import print_function, division
 
-import math
-import cairo
 import sys
-import subprocess
 import os
+import math
+import subprocess
 from email.utils import mktime_tz, parsedate_tz, formatdate
 
-# defaults
-author = ''
-width = 1100
-output_file = 'output.png'
+try:
+    import matplotlib
+except ImportError:
+    matplotlib = None
 
-if len(sys.argv) > 1:
-    if sys.argv[1] == "--help" or sys.argv[1] == "-h":
-        print("SYNTAX:    git punchchard")
-        print
-        print("EXAMPLE:   git punchchard file=outputfile.png width=4000")
-        print("This creates 'outputfile.png', a 4000px wide png image")
-        print
-        print("EXAMPLE:   git punchcard path=/home/siddharth/code/punchcard")
-        print("This creates a punch card of the git repository at the given path")
-        print
-        print("EXAMPLE:   git punchcard opaque=0")
-        print("This sets the opacity of all the circles to constant value 0")
-        print("0 -> Black, 1 -> White (invisible)")
-        print
-        print("EXAMPLE:   git punchcard timezone=+7.5")
-        print("This shows the graph with all times converted to timezone UTC+7.5")
-        print("If your contributors live in multiple timezones, this helps you")
-        print("in getting a relative estimate of when they work.")
-        print
+if sys.version_info[0] < 3:
+    def decode(s): return s
+else:
+    def decode(s): return s.decode()
+
+class Options:
+    author = ''
+    width = 1100
+    output_file = None
+    path = os.getcwd()
+    opaque = -1
+    timezone = None
+    gitopts = ()
+    plotter = 'matplotlib' if matplotlib is not None else 'cairo'
+
+def get_opts():
+    if len(sys.argv) > 1 and sys.argv[1] in ("-h", "-?", "--help"):
+        print("""
+SYNTAX:    git punchchard [option=value] [--opt=value]
+
+Available options:
+    width: plot width (in pixels)
+    file: output file (extension should be the image format)
+    path: path to the git repo
+    opaque: gray-scale color for circles in (0.0, 1.0), or -1 for auto
+    utc: true if time zone is utc
+    timezone: floating point number of hours off utc
+    plotter: "matplotlib" or "cairo"
+
+Options starting with '-' are sent directly to the git log command.  For
+example, git
+
+EXAMPLE:   git punchchard file=outputfile.png width=4000
+This creates 'outputfile.png', a 4000px wide png image
+
+EXAMPLE:   git punchcard path=/home/siddharth/code/punchcard
+This creates a punch card of the git repository at the given path
+
+EXAMPLE:   git punchcard opaque=0
+This sets the opacity of all the circles to constant value 0
+0 -> Black, 1 -> White (invisible)
+
+EXAMPLE:   git punchcard timezone=+7.5
+This shows the graph with all times converted to timezone UTC+7.5
+If your contributors live in multiple timezones, this helps you
+in getting a relative estimate of when they work.
+""")
+
         sys.exit(0)
 
-original_path = os.getcwd()
-path = os.getcwd()
-opaque = -1
-utc = 0
-timezone = None
-gitopts = ""
+    options = Options()
 
-options = dict()
+    options.gitopts = tuple(arg for arg in sys.argv[1:] if arg.startswith('-'))
+    args = dict(arg.split('=', 1) for arg in sys.argv[1:] if not arg.startswith('-'))
 
-if len(sys.argv) > 1:
-    options = dict(arg.split('=', 1) for arg in sys.argv[1:])
-if options.has_key('width'):
-    width = int(options['width'])
-if options.has_key('author'):
-    author = options['author']
-if options.has_key('file'):
-    output_file = options["file"]
-if options.has_key('path'):
-    path = options["path"]
-if options.has_key('opaque'):
-    try:
-        opaque = float(options["opaque"])
-    except ValueError as error:
-        print("WARNING: Could not parse the opaque argument you gave. Please \
-        enter a value between 0 and 1")
-        opaque = -1
-if options.has_key('utc'):
-    utc = options['utc'] == '1'
-    timezone = 0
-if options.has_key('timezone'):
-    try:
-        timezone = float(options["timezone"])
-    except ValueError as error:
-        print("WARNING: COULD not parse timezone argument.")
-        print("Please enter a decimal value. Eg: 3.0, -11.5")
-        timezone = None
+    for name, value in args.items():
+        if name == 'width':
+            options.width = int(value)
+        elif name == 'author':
+            options.author = value
+        elif name == 'file':
+            options.output_file = value
+        elif name == 'path':
+            options.path = value
+        elif name == 'opaque':
+            try:
+                options.opaque = float(value)
+            except ValueError as error:
+                print("WARNING: Could not parse the opaque argument you gave. Please \
+                enter a value between 0 and 1")
+                options.opaque = -1
+        elif name == 'utc':
+            options.timezone = 0 if value == '1' else None
+        elif name == 'timezone':
+            try:
+                options.timezone = float(value)
+            except ValueError as error:
+                print("WARNING: COULD not parse timezone argument.")
+                print("Please enter a decimal value. Eg: 3.0, -11.5")
+                options.timezone = None
+        elif name == 'plotter':
+            options.plotter = value
+        else:
+            raise ValueError("unknown argument %r"%name)
 
-if options.has_key('gitopts'):
-    gitopts = options['gitopts']
+    return options
 
-height = int(round(width/2.75, 0))
-
-# Calculate the relative distance
-distance = int(math.sqrt((width*height)/270.5))
-
-# Round the distance to a number divisible by 2
-if distance % 2 == 1:
-    distance -= 1
-
-max_range = (distance/2) ** 2
-
-# Good values for the relative position
-left = width/18 + 10  # The '+ 10' is to prevent text from overlapping 
-top = height/20 + 10
-indicator_length = height/20
-
-days = ['Sat', 'Fri', 'Thu', 'Wed', 'Tue', 'Mon', 'Sun']
-hours = ['12am'] + [str(x) for x in xrange(1, 12)] + ['12pm'] + [str(x) for x in xrange(1, 12)]
+DAYS = ['Sat', 'Fri', 'Thu', 'Wed', 'Tue', 'Mon', 'Sun']
+HOURS = ['12am'] + [str(x) for x in range(1, 12)] + ['12pm'] + [str(x) for x in range(1, 12)]
 def get_x_y_from_date(day, hour):
-    y = top + (days.index(day) + 1) * distance
-    x = left + (hour + 1) * distance
-    return x, y
+    return hour, DAYS.index(day)
 
-def get_log_data():
+def get_log_data(path, gitopts=()):
+    gitcommand = ['git', 'log', '--no-merges', '--pretty=format:%aD']
+    gitcommand.extend(gitopts)
+
+    print('run cmd: ', ' '.join(gitcommand))
+
     try:
+        cwd = os.getcwd()
         os.chdir(path)
-        print 'current path: ', os.getcwd()
-        gitcommand = ['git', 'log', '--no-merges', '--author='+author, \
-                '--pretty=format: %aD']
-
-        if gitopts != "":
-            gitcommand.append(gitopts)
-
-        print 'run cmd: ', ' '.join(gitcommand)
-
         p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         outdata, errdata = p.communicate()
+        outdata, errdata = outdata.decode(), errdata.decode()
     except OSError as e:
         print('Git not installed?')
         sys.exit(-1)
+    finally:
+        os.chdir(cwd)
     if outdata == '':
-        print('Not a git repository?')
+        print('Not a git repository? Author has no commits?')
         sys.exit(-1)
     return outdata
 
-# get day and hour
-temp_log = get_log_data()
+def histogram_logs(logs, timezone=None):
+    """
+    Computes the proportion for events that occur in each hour of the week.
 
-# CONVERT EVERYTHING TO UTC or ADD TIMEZONE OFFSET
+    Hours are numbered from 0 starting at midnight and increasing to 23 for 11pm.
+    Days are numbered from 0 starting on Saturday and increasing to 6 for sunday.
 
-utc_offset = timezone != None and timezone * 3600 or 0
+    Returns [(proportion, (hour, day))]
+    """
+    # CONVERT EVERYTHING TO UTC or ADD TIMEZONE OFFSET
+    utc_offset = timezone != None and timezone * 3600 or 0
 
-fixed_stamps = temp_log.split('\n')
+    fixed_stamps = logs.split('\n')
 
-if timezone != None:
-    fixed_stamps = [formatdate(mktime_tz(parsedate_tz(x)) + utc_offset) \
-            for x in fixed_stamps]
+    if timezone != None:
+        fixed_stamps = [formatdate(mktime_tz(parsedate_tz(x)) + utc_offset)
+                        for x in fixed_stamps]
 
-data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] \
-        for x in fixed_stamps]
+    data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]]
+                for x in fixed_stamps]
 
-stats = {}
-for d in days:
-    stats[d] = {}
-    for h in xrange(0, 24):
-        stats[d][h] = 0
+    # initialize each bin to zero
+    stats = {}
+    for d in DAYS:
+        stats[d] = {}
+        for h in range(0, 24):
+            stats[d][h] = 0
 
-total = 0
-for line in data_log:
-    stats[ line[0] ][ int(line[1]) ] += 1
-    total += 1
+    # accumulate bins
+    total = 0
+    for line in data_log:
+        stats[ line[0] ][ int(line[1]) ] += 1
+        total += 1
 
-def get_length(nr):
-    if nr == 0:
-        return 0
-    for i in xrange(1, distance/2):
-        if i*i <= nr and nr < (i+1)*(i+1):
-            return i
-    if nr == max_range:
-        return distance/2-1
+    # find max bin
+    max_value = max(v for hours in stats.values() for v in hours.values())
 
-# normalize
-all_values = []
-for d, hour_pair in stats.items():
-    for h, value in hour_pair.items():
-        all_values.append(value)
-max_value = max(all_values)
-final_data = []
-for d, hour_pair in stats.items():
-    for h, value in hour_pair.items():
-        final_data.append( [ get_length(int( float(stats[d][h]) / max_value * max_range )), get_x_y_from_date(d, h) ] )
+    # convert bins to histogram elements, normalized to max bin
+    hist = [(v/max_value, get_x_y_from_date(d, h))
+            for d, hours in stats.items()
+            for h, v in hours.items()]
 
-surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
-cr = cairo.Context(surface)
+    return hist
 
-cr.set_line_width (1)
+def cairo_plot(hist, width=Options.width, opaque=-1, path=None):
+    import cairo
 
-# draw background to white
-cr.set_source_rgb(1, 1, 1)
-cr.rectangle(0, 0, width, height)
-cr.fill()
+    if path is None:
+        path = 'output.png'
 
-# set black
-cr.set_source_rgb(0, 0, 0)
+    height = int(round(width/2.75, 0))
 
-# draw x-axis and y-axis
-cr.move_to(left, top)
-cr.rel_line_to(0, 8 * distance)
-cr.rel_line_to(25 * distance, 0)
-cr.stroke()
+    # Calculate the relative distance
+    distance = int(math.sqrt((width*height)/270.5))
 
-# draw indicators on x-axis and y-axis
-x, y = left, top
-for i in xrange(8):
-    cr.move_to(x, y)
-    cr.rel_line_to(-indicator_length, 0)
+    # Round the distance to a number divisible by 2
+    if distance % 2 == 1:
+        distance -= 1
+
+    max_range = (distance/2) ** 2
+
+    # Good values for the relative position
+    left = width/18 + 10  # The '+ 10' is to prevent text from overlapping
+    top = height/20 + 10
+    indicator_length = height/20
+
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+    cr = cairo.Context(surface)
+
+    cr.set_line_width (1)
+
+    # draw background to white
+    cr.set_source_rgb(1, 1, 1)
+    cr.rectangle(0, 0, width, height)
+    cr.fill()
+
+    # set black
+    cr.set_source_rgb(0, 0, 0)
+
+    # draw x-axis and y-axis
+    cr.move_to(left, top)
+    cr.rel_line_to(0, 8 * distance)
+    cr.rel_line_to(25 * distance, 0)
     cr.stroke()
-    y += distance
 
-x += distance
-for i in xrange(25):
-    cr.move_to(x, y)
-    cr.rel_line_to(0, indicator_length)
-    cr.stroke()
+    # draw indicators on x-axis and y-axis
+    x, y = left, top
+    for i in range(8):
+        cr.move_to(x, y)
+        cr.rel_line_to(-indicator_length, 0)
+        cr.stroke()
+        y += distance
+
     x += distance
+    for i in range(25):
+        cr.move_to(x, y)
+        cr.rel_line_to(0, indicator_length)
+        cr.stroke()
+        x += distance
 
-# select font
-cr.select_font_face ('sans-serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+    # select font
+    cr.select_font_face ('sans-serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
 
-# and set a appropriate font size
-cr.set_font_size(math.sqrt((width*height)/3055.6))
+    # and set a appropriate font size
+    cr.set_font_size(math.sqrt((width*height)/3055.6))
 
-# draw Mon, Sat, ... Sun on y-axis
-x, y = (left - 5), (top + distance)
-for i in xrange(7):
-    x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(days[i])
-    cr.move_to(x - indicator_length - width, y + height/2)
-    cr.show_text(days[i])
-    y += distance
+    # draw Mon, Sat, ... Sun on y-axis
+    x, y = (left - 5), (top + distance)
+    for i in range(7):
+        x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(DAYS[i])
+        cr.move_to(x - indicator_length - width, y + height/2)
+        cr.show_text(DAYS[i])
+        y += distance
 
-# draw 12am, 1, ... 11 on x-axis
-x, y = (left + distance), (top + (7 + 1) * distance + 5)
-for i in xrange(24):
-    x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(hours[i])
-    cr.move_to(x - width/2 - x_bearing, y + indicator_length + height)
-    cr.show_text(hours[i])
-    x += distance
+    # draw 12am, 1, ... 11 on x-axis
+    x, y = (left + distance), (top + (7 + 1) * distance + 5)
+    for i in range(24):
+        x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(HOURS[i])
+        cr.move_to(x - width/2 - x_bearing, y + indicator_length + height)
+        cr.show_text(HOURS[i])
+        x += distance
+
+    for p, (x, y) in hist:
+        x, y = (left + (x+1)*distance, top + (y+1)*distance)
+        size = circle_size(p, distance/2 - 1)
+        color = 1 - size if opaque < 0 else opaque
+        cairo_circle(cr, (x, y), size, color)
+
+    # write to output
+    surface.write_to_png(path)
+
+    print("punchcard written to output file at: %s" % os.path.join(os.getcwd(), path))
+
+def circle_size(weight, max_radius):
+    return int(math.ceil(math.sqrt(weight)*max_radius))
 
 # draw circles according to their frequency
-def draw_circle(pos, length):
+def cairo_circle(cr, pos, length, color):
     # find the position
     # max of length is half of the distance
     x, y = pos
-    clr = (1 - float(length * length) / max_range )
-    if opaque >= 0 and opaque < 1:
-        clr = opaque
-    cr.set_source_rgba (clr, clr, clr)
+    cr.set_source_rgba(color, color, color)
     cr.move_to(x, y)
     cr.arc(x, y, length, 0, 2 * math.pi)
     cr.fill()
 
-for each in final_data:
-    draw_circle(each[1], each[0])
+def mpl_plot(hist, width=Options.width, opaque=-1, path=None):
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Circle
+    import numpy as np
 
-# write to output
-os.chdir(original_path)
-surface.write_to_png (output_file)
+    height = int(round(width/2.75, 0))
+    plt.figure(figsize=(width/72, height/72))
 
-print "punchcard written to output file at: %s" % os.path.join(original_path, output_file)
+    weight, pos = zip(*hist)
+    x, y = zip(*pos)
+    #color = 1 - np.array(weight) if opaque < 0 else opaque
+    #radius = np.sqrt(weight)*0.5
+    #plt.scatter(x, y, s=radius, c=color)
+    ax = plt.gca()
+    for wk, xk, yk in zip(weight, x, y):
+        color = 1 - wk if opaque < 0 else opaque
+        size = math.sqrt(wk)*0.5
+        ax.add_artist(Circle(xy=(xk+0.5, yk+0.5),
+                      radius=size,
+                      color=(color, color, color)))
+    #plt.plot((0,24),(0,7))
+    #plt.xlim((0, len(HOURS)+1))
+    #plt.ylim((0, len(DAYS)+1))
+    plt.xticks(np.arange(len(HOURS))+0.5, HOURS)
+    plt.yticks(np.arange(len(DAYS))+0.5, DAYS)
+    #plt.axis('equal')
+    plt.axis([0, 24, 0, 7])
+    if path:
+        plt.savefig(path)
+    else:
+        plt.show()
+
+
+if __name__ == '__main__':
+    opt = get_opts()
+    logs = get_log_data(opt.path, gitopts=opt.gitopts)
+    hist = histogram_logs(logs, timezone=opt.timezone)
+    if opt.plotter == 'matplotlib':
+        mpl_plot(hist, width=opt.width, opaque=opt.opaque, path=opt.output_file)
+    elif opt.plotter == 'cairo':
+        cairo_plot(hist, width=opt.width, opaque=opt.opaque, path=opt.output_file)
+    else:
+        raise ValueError("unknown plotter %r"%opt.plotter)
