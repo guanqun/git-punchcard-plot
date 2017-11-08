@@ -43,23 +43,23 @@ echo
 ## git options: test 1: --since option
 
 echo
-echo "GIT OPTIONS: Invoking with --gitopts=\"--since='1 month ago'\""
+echo "GIT OPTIONS: Invoking with --since='1 month ago'"
 echo "All timestamps are converted to UTC+7.5 before plotting the punchcard"
-./git-punchcard gitopts='--since="1 month ago"' opaque=0 file=git-options-since.png
+./git-punchcard --since="1 month ago" opaque=0 file=git-options-since.png
 echo
 
 ## git options: test 2: --before option
 
 echo
-echo "GIT OPTIONS: Invoking with --gitopts=\"--before='january 2014'\""
+echo "GIT OPTIONS: Invoking with --before='january 2014'"
 echo "All timestamps are converted to UTC+7.5 before plotting the punchcard"
-./git-punchcard gitopts='--before="january 2014"' opaque=0 file=git-options-before.png
+./git-punchcard --before="january 2014" opaque=0 file=git-options-before.png
 echo
 
 ## git options: test 3: --since and before option
 
 echo
-echo "GIT OPTIONS: Invoking with --gitopts=\"--before='september 2017' --after='january 2017'\""
+echo "GIT OPTIONS: Invoking with --before='september 2017' --after='january 2017'"
 echo "All timestamps are converted to UTC+7.5 before plotting the punchcard"
-./git-punchcard gitopts='--since="1 month ago" --after="january 2017"' opaque=0 file=git-options-period.png
+./git-punchcard --before="september 2017" --after="january 2017" opaque=0 file=git-options-period.png
 echo
