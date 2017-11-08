@@ -51,9 +51,9 @@ echo
 ## git options: test 2: --before option
 
 echo
-echo "GIT OPTIONS: Invoking with --before='january 2014'"
+echo "GIT OPTIONS: Invoking with gitopts=\"--before='january 2014'\""
 echo "All timestamps are converted to UTC+7.5 before plotting the punchcard"
-./git-punchcard --before="january 2014" opaque=0 file=git-options-before.png
+./git-punchcard gitopts="--before=\"january 2014\"" opaque=0 file=git-options-before.png
 echo
 
 ## git options: test 3: --since and before option

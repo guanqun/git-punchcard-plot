@@ -69,7 +69,7 @@ in getting a relative estimate of when they work.
 
     options = Options()
 
-    options.gitopts = tuple(arg for arg in sys.argv[1:] if arg.startswith('-'))
+    options.gitopts = list(arg for arg in sys.argv[1:] if arg.startswith('-'))
     args = dict(arg.split('=', 1) for arg in sys.argv[1:] if not arg.startswith('-'))
 
     for name, value in args.items():
@@ -99,6 +99,9 @@ in getting a relative estimate of when they work.
                 options.timezone = None
         elif name == 'plotter':
             options.plotter = value
+        elif name == 'gitopts':
+            # support for old-style gitopts="..."
+            options.gitopts.append(value)
         else:
             raise ValueError("unknown argument %r"%name)
 
