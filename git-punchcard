@@ -13,14 +13,9 @@ import subprocess
 from email.utils import mktime_tz, parsedate_tz, formatdate
 
 try:
-    import matplotlib
+    import cairo
 except ImportError:
-    matplotlib = None
-
-if sys.version_info[0] < 3:
-    def decode(s): return s
-else:
-    def decode(s): return s.decode()
+    cairo = None
 
 class Options:
     author = ''
@@ -30,7 +25,7 @@ class Options:
     opaque = -1
     timezone = None
     gitopts = ()
-    plotter = 'matplotlib' if matplotlib is not None else 'cairo'
+    plotter = 'cairo' if cairo is not None else 'matplotlib'
 
 def get_opts():
     if len(sys.argv) > 1 and sys.argv[1] in ("-h", "-?", "--help"):
