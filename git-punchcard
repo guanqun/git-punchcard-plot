@@ -102,14 +102,14 @@ def get_x_y_from_date(day, hour):
 def get_log_data():
     try:
         os.chdir(path)
-        print 'current path: ', os.getcwd()
+        print('current path: ', os.getcwd())
         gitcommand = ['git', 'log', '--no-merges', '--author='+author, \
                 '--pretty=format: %aD']
 
         if gitopts != "":
             gitcommand.append(gitopts)
 
-        print 'run cmd: ', ' '.join(gitcommand)
+        print('run cmd: ', ' '.join(gitcommand))
 
         p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
@@ -247,4 +247,4 @@ for each in final_data:
 os.chdir(original_path)
 surface.write_to_png (output_file)
 
-print "punchcard written to output file at: %s" % os.path.join(original_path, output_file)
+print("punchcard written to output file at: %s" % os.path.join(original_path, output_file))
