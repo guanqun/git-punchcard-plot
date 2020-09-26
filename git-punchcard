@@ -47,25 +47,25 @@ options = dict()
 
 if len(sys.argv) > 1:
     options = dict(arg.split('=', 1) for arg in sys.argv[1:])
-if options.has_key('width'):
+if 'width' in options:
     width = int(options['width'])
-if options.has_key('author'):
+if 'author' in options:
     author = options['author']
-if options.has_key('file'):
+if 'file' in options:
     output_file = options["file"]
-if options.has_key('path'):
+if 'path' in options:
     path = options["path"]
-if options.has_key('opaque'):
+if 'opaque' in options:
     try:
         opaque = float(options["opaque"])
     except ValueError as error:
         print("WARNING: Could not parse the opaque argument you gave. Please \
         enter a value between 0 and 1")
         opaque = -1
-if options.has_key('utc'):
+if 'uth' in options:
     utc = options['utc'] == '1'
     timezone = 0
-if options.has_key('timezone'):
+if 'timezone' in options:
     try:
         timezone = float(options["timezone"])
     except ValueError as error:
@@ -73,7 +73,7 @@ if options.has_key('timezone'):
         print("Please enter a decimal value. Eg: 3.0, -11.5")
         timezone = None
 
-if options.has_key('gitopts'):
+if 'gitopts' in options:
     gitopts = options['gitopts']
 
 height = int(round(width/2.75, 0))
