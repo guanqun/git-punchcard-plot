@@ -47,25 +47,25 @@ options = dict()
 
 if len(sys.argv) > 1:
     options = dict(arg.split('=', 1) for arg in sys.argv[1:])
-if options.has_key('width'):
+if 'width' in options:
     width = int(options['width'])
-if options.has_key('author'):
+if 'author' in options:
     author = options['author']
-if options.has_key('file'):
+if 'file' in options:
     output_file = options["file"]
-if options.has_key('path'):
+if 'path' in options:
     path = options["path"]
-if options.has_key('opaque'):
+if 'opaque' in options:
     try:
         opaque = float(options["opaque"])
     except ValueError as error:
         print("WARNING: Could not parse the opaque argument you gave. Please \
         enter a value between 0 and 1")
         opaque = -1
-if options.has_key('utc'):
+if 'utc' in options:
     utc = options['utc'] == '1'
     timezone = 0
-if options.has_key('timezone'):
+if 'timezone' in options:
     try:
         timezone = float(options["timezone"])
     except ValueError as error:
@@ -73,7 +73,7 @@ if options.has_key('timezone'):
         print("Please enter a decimal value. Eg: 3.0, -11.5")
         timezone = None
 
-if options.has_key('gitopts'):
+if 'gitopts' in options:
     gitopts = options['gitopts']
 
 height = int(round(width/2.75, 0))
@@ -93,7 +93,7 @@ top = height/20 + 10
 indicator_length = height/20
 
 days = ['Sat', 'Fri', 'Thu', 'Wed', 'Tue', 'Mon', 'Sun']
-hours = ['12am'] + [str(x) for x in xrange(1, 12)] + ['12pm'] + [str(x) for x in xrange(1, 12)]
+hours = ['12am'] + [str(x) for x in range(1, 12)] + ['12pm'] + [str(x) for x in range(1, 12)]
 def get_x_y_from_date(day, hour):
     y = top + (days.index(day) + 1) * distance
     x = left + (hour + 1) * distance
@@ -102,19 +102,20 @@ def get_x_y_from_date(day, hour):
 def get_log_data():
     try:
         os.chdir(path)
-        print 'current path: ', os.getcwd()
+        print('current path: ', os.getcwd())
         gitcommand = ['git', 'log', '--no-merges', '--author='+author, \
                 '--pretty=format: %aD']
 
         if gitopts != "":
             gitcommand.append(gitopts)
 
-        print 'run cmd: ', ' '.join(gitcommand)
+        print('run cmd: ', ' '.join(gitcommand))
 
         p = subprocess.Popen(gitcommand,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
         outdata, errdata = p.communicate()
     except OSError as e:
         print('Git not installed?')
@@ -143,7 +144,7 @@ data_log = [[x.strip().split(',')[0], x.strip().split(' ')[4].split(':')[0]] \
 stats = {}
 for d in days:
     stats[d] = {}
-    for h in xrange(0, 24):
+    for h in range(0, 24):
         stats[d][h] = 0
 
 total = 0
@@ -154,7 +155,7 @@ for line in data_log:
 def get_length(nr):
     if nr == 0:
         return 0
-    for i in xrange(1, distance/2):
+    for i in range(1, distance//2):
         if i*i <= nr and nr < (i+1)*(i+1):
             return i
     if nr == max_range:
@@ -192,14 +193,14 @@ cr.stroke()
 
 # draw indicators on x-axis and y-axis
 x, y = left, top
-for i in xrange(8):
+for i in range(8):
     cr.move_to(x, y)
     cr.rel_line_to(-indicator_length, 0)
     cr.stroke()
     y += distance
 
 x += distance
-for i in xrange(25):
+for i in range(25):
     cr.move_to(x, y)
     cr.rel_line_to(0, indicator_length)
     cr.stroke()
@@ -213,7 +214,7 @@ cr.set_font_size(math.sqrt((width*height)/3055.6))
 
 # draw Mon, Sat, ... Sun on y-axis
 x, y = (left - 5), (top + distance)
-for i in xrange(7):
+for i in range(7):
     x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(days[i])
     cr.move_to(x - indicator_length - width, y + height/2)
     cr.show_text(days[i])
@@ -221,7 +222,7 @@ for i in xrange(7):
 
 # draw 12am, 1, ... 11 on x-axis
 x, y = (left + distance), (top + (7 + 1) * distance + 5)
-for i in xrange(24):
+for i in range(24):
     x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(hours[i])
     cr.move_to(x - width/2 - x_bearing, y + indicator_length + height)
     cr.show_text(hours[i])
@@ -247,4 +248,4 @@ for each in final_data:
 os.chdir(original_path)
 surface.write_to_png (output_file)
 
-print "punchcard written to output file at: %s" % os.path.join(original_path, output_file)
+print("punchcard written to output file at: %s" % os.path.join(original_path, output_file))
