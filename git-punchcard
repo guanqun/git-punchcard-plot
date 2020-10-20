@@ -62,7 +62,7 @@ if 'opaque' in options:
         print("WARNING: Could not parse the opaque argument you gave. Please \
         enter a value between 0 and 1")
         opaque = -1
-if 'uth' in options:
+if 'utc' in options:
     utc = options['utc'] == '1'
     timezone = 0
 if 'timezone' in options:
